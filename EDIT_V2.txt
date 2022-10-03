@@ -1,0 +1,32 @@
+edit workout senza eliminare e ricreare oggetto
+
+1) prendere dati da localstorage
+2) parse dati dal local storage.
+3) metterli in array workouts
+4) ciclare array workouts e settare prototype a oggetto in base a sua tipologia o ricreare n oggetti del tipo corrispondente(vedere cosa è piu efficiente)
+5)check iscreatemode
+6) se iscreatemode prendere lat e lng da #mapevent
+
+//METODO CASO NON CREATEMODE
+7) validazione dei dati(valutare di spostare funzioni validazione in metodi a se). fare ritornare true o false da questa funzione
+8) se validazione ok. funzione UpdateObj ricevente oggetto da aggiornare e indice di questo oggetto in array workouts
+se tipologie dei 2 oggetti sono diverse creare nuovo oggetto. modificarlo e chiamare metodi
+che normalmente sono chiamati nel suo costruttore. 
+9)nascondere vecchio workout da lista usando id 
+10)settare nuovo oggetto in stessa posizione array
+rimuovere vecchio marker
+chiamare renderworkoutmarker con nuovo oggetto,
+renderworkoutlist
+salvare dati in localstorage
+
+se createmode--> fare altro metodo. questo metodo dovrà sempre validare input, creare nuovo oggetto, aggiungere questo oggetto a array
+
+metodo new workout sostanzialmente avrà
+	- if su tipologia workout
+	- chiamata a funzione per validare input
+	- if con check create mode e chiamerà un metodo piuttosto di un altro
+	- salvataggio dati su localstorage
+	- rendermarker
+	- metodo che nasconde/ rimuove dal dom vecchio workout
+	- renderworkoutlist
+

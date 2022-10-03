@@ -1,0 +1,8 @@
+se #mapevent è undefined siginifca che sto editando un workout
+altrimenti ho cliccato sulla mappa
+
+spostare da Edit a -- fa rimuovere form --> è modo di annullare l'operazione
+metodo toggleelevationfield non funziona bene in questo caso---->RISOLTO
+risolvere problema mapevent in newworkout e fare refactoring di quel metodo--->RISOLTO
+
+risolvere problema marker che non vengono rimossi in seguito ad eleiminazione workout o edit--->RISOLTO
