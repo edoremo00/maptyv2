@@ -80,13 +80,33 @@ class App {
   #layersarr;
   //#sorted = 'descending'; //default decrescente. in realtà non è ne uno ne l'altro. ma uso variabile per togglare tra ordine crescente e decrescente
   #mapevent;
+  #polipop; //istanza per creare avvisi popup
   #workouts = []; //where all workouts are going to be stored
   constructor() {
+    this.#polipop = new Polipop('polipop');
     //GEOLOCATION API
-    this._getPosition();
+    (async () => {
+      try {
+        const position = await this._getPosition();
+        //RETRIEVE WORKOUTS FROM LOCALSTORAGE
+        this._loadWorkoutsFromLocalStorage();
+        this._loadMap(position);
+      } catch (error) {
+        this._hidesortbar();
+        this._showNotification(error.message, 'error', 'GPS Error');
+        console.error(error);
+      }
+    })();
+    /* this._getPosition()
+      .then(position => {
+        console.log(position);
+        this._loadWorkoutsFromLocalStorage();
+        this._loadMap(position);
+      })
+      .catch(err => console.error(err));*/
 
     //RETRIEVE WORKOUTS FROM LOCALSTORAGE
-    this._loadWorkoutsFromLocalStorage();
+    //this._loadWorkoutsFromLocalStorage();
 
     //EVENT LISTENERS
     //this in constructor function vale come l'oggetto che mi restituirà
@@ -104,7 +124,7 @@ class App {
     console.log('VALORE THIS', this);
     //GEOLOCATION API
     if (navigator.geolocation) {
-      const errorfn = function (err) {
+      /*const errorfn = function (err) {
         const { message } = err;
         console.error(message);
       };
@@ -116,7 +136,15 @@ class App {
         {
           enableHighAccuracy: true,
         }
-      );
+      );*/
+      //const tocallf = this._loadMap.bind(this);
+
+      return new Promise((resolve, reject) => {
+        //;
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+        });
+      });
     }
   }
   _loadMap(position) {
@@ -142,16 +170,18 @@ class App {
     }).addTo(map);*/
 
     //Leaflet con Google Maps
+
     const basemap = L.tileLayer(
-      'http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',
+      'http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
       {
         maxZoom: 20,
         subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
       }
     ).addTo(this.#map);
 
-    const streetsmap = L.tileLayer(
-      'http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    //OTHER LAYERS MAPS
+    const satellitemap = L.tileLayer(
+      'http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',
       {
         maxZoom: 20,
         subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
@@ -175,12 +205,12 @@ class App {
     );
 
     const baseMaps = {
-      'Google satelite map': basemap,
+      'Google street map': basemap,
     };
 
     const overlaymaps = {
       'Google terrain map': terrainmap,
-      'Google street map': streetsmap,
+      'Google satellite map': satellitemap,
       OSM: openStreetmap,
     };
 
@@ -230,6 +260,14 @@ class App {
     form.classList.add('hidden');
     setTimeout(() => (form.style.display = 'grid'), 1000);
   }
+  _showNotification(message = '', type = 'info', title = '') {
+    //mostra informazioni a utente con popup
+    this.#polipop.add({
+      type: type,
+      title: title,
+      content: message,
+    });
+  }
   _moveToMarker(event) {
     //cliccando su allenamento voglio spostare la mappa li
 
@@ -259,6 +297,7 @@ class App {
     }
   }
   _noWhiteSpaceinputs(...inputs) {
+    //validazione input
     return inputs.every(input => input.replaceAll(' ', '').length > 0);
   }
   _allPositiveInputs(...inputs) {
@@ -309,6 +348,7 @@ class App {
     //CASO STESSA TIPOLOGIA WORKOUT DA VECCHIO A NUOVO(aggiorno solo i Dati)
     if (newType === tipowork) {
       if (tipowork === 'running') {
+        Object.setPrototypeOf(toUpdateCopy, Running.prototype);
         toUpdateCopy.distance = distance;
         toUpdateCopy.duration = duration;
         toUpdateCopy.cadence = +inputCadence.value;
@@ -317,6 +357,7 @@ class App {
         return toUpdateCopy;
       }
       if (tipowork === 'cycling') {
+        Object.setPrototypeOf(toUpdateCopy, Cycling.prototype);
         toUpdateCopy.distance = distance;
         toUpdateCopy.duration = duration;
         toUpdateCopy.elevationGain = +inputElevation.value;
@@ -341,6 +382,7 @@ class App {
   }
   _newWorkout(e) {
     e.preventDefault();
+    debugger;
 
     //get data from form
     const type = inputType.value;
@@ -354,7 +396,11 @@ class App {
     //check if values are valid
 
     if (!this._handleValidation())
-      return alert('Inputs must be valid and positives');
+      return this._showNotification(
+        'Inputs are not valid',
+        'error',
+        'Invalid values'
+      );
     //chiama funzioni validazione e mostra alert in cado di errore
     if (isCreatemode) {
       lat = this.#mapevent.latlng.lat;
@@ -365,6 +411,11 @@ class App {
       console.log(workout);
       this._renderWorkoutMarker(workout);
       this._renderWorkoutList(workout);
+      this._showNotification(
+        'Workout successfully created',
+        'success',
+        'Workout Created'
+      );
     }
     if (!isCreatemode) {
       const workoutEl = this.#previousselected.closest('.workout');
@@ -380,7 +431,17 @@ class App {
 
         this._renderWorkoutList(updated);
         this._renderWorkoutMarker(updated);
-      } else return alert('unable to find workout');
+        this._showNotification(
+          'Workout Updated successfully',
+          'success',
+          'Workout Updated'
+        );
+      } else
+        return this._showNotification(
+          'Error in Edit workout',
+          'error',
+          'Workout not found'
+        );
     }
 
     //hide form and clear inputs
